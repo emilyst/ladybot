@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'cinch'
 
 module Ladybot
@@ -6,8 +8,6 @@ module Ladybot
       include Cinch::Plugin
 
       attr_reader :ongoing_syncs
-
-      OngoingSync = Struct.new(:syncers)
 
       def initialize(bot)
         super(bot)
@@ -19,11 +19,12 @@ module Ladybot
       match /^go/,   use_prefix: false, method: :go
 
       def sync(message, *args)
-        synchronize(message.channel) do
-          if !@ongoing_syncs.has_key?(message.channel)
-            @ongoing_syncs[message.channel] = OngoingSync.new([message.user.nick])
+        synchronize(message.channel.name) do
+          if !@ongoing_syncs.has_key?(message.channel.name)
+            @ongoing_syncs[message.channel.name] = [message.user.nick]
 
-            Timer(5 * 60, shots: 1) { rip(message.channel) }
+            # schedule a sync five minutes out
+            Timer(5 * 60, shots: 1) { countdown(message.channel.name) }
 
             reply = "#{message.user.nick} has started a sync! Type "\
                     '"rdy" to join the sync! I will notify '\
@@ -38,22 +39,23 @@ module Ladybot
             # instant, throwaway timer we can use like a callback so
             # that it fires outside of this thread and we can release
             # the mutex for now)
-            Timer(0, shots: 1) { go(message, *args) }
+            Timer(0, shots: 1) { countdown(message.channel.name) }
           end
         end
       end
 
       def rdy(message, *args)
         reply = synchronize(message.channel) do
-          if !@ongoing_syncs.has_key?(message.channel)
+          if !@ongoing_syncs.has_key?(message.channel.name)
             "Sorry, #{message.user.nick}, there's no sync going. Type "\
             '"sync" to start one off!'
-          elsif @ongoing_syncs[message.channel].syncers.include?(message.user.nick)
+          elsif @ongoing_syncs.has_key?(message.channel.name) &&
+                @ongoing_syncs[message.channel.name].include?(message.user.nick)
             "Sorry, #{message.user.nick}, you're already in the sync. "\
             'Just wait for it to kick off automatically, or type "go" '\
             'or "sync" to kick it off yourself when you\'re ready.'
           else
-            @ongoing_syncs[message.channel].syncers << message.user.nick
+            @ongoing_syncs[message.channel.name] << message.user.nick
 
             "#{message.user.nick}, you've been added to the sync! "\
             'Just wait for ohers to join, or type "go" or "sync" to '\
@@ -64,15 +66,16 @@ module Ladybot
       end
 
       def go(message, *args)
-        rip(message.channel)
+        countdown(message.channel.name)
       end
 
-      private
-
-      def rip(channel)
+      def countdown(channel)
         synchronize(channel) do
           if @ongoing_syncs.has_key?(channel)
-            participants = @ongoing_syncs[channel].syncers.uniq.join(', ')
+            participants = @ongoing_syncs[channel].uniq.join(', ')
+
+            # deletes an existing ongoing sync so that we can begin
+            # a new one after
             @ongoing_syncs.delete(channel)
 
             announce = "Hey, #{participants}, it's time to sync in five seconds!"
