@@ -1,5 +1,5 @@
-require "ladybot/version"
+require 'ladybot/version'
+require 'ladybot/bot'
 
-module Ladybot
-  # Your code goes here...
-end
+# load plugins
+Dir[File.join(__dir__, 'ladybot', 'plugin', '*')].each { |file| require file }
