@@ -1,13 +1,7 @@
 # frozen_string_literal: true
 
 describe Ladybot::Plugin::Sync do
-  let(:nick)    { 'scrooge' }
-  let(:channel) { '#duckberg' }
-  let(:bot)     { Cinch::Bot.new }
-
-  subject { described_class.new(bot) }
-
-  before { bot.loggers.level = :fatal }
+  include_context 'plugin context'
 
   context 'sync command' do
     let(:message) { Cinch::Message.new(":#{nick}!user@duckberg.org PRIVMSG #{channel} :sync", bot) }
