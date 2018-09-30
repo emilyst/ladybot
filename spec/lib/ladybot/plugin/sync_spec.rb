@@ -43,8 +43,9 @@ describe Ladybot::Plugin::Sync do
     end
 
     context 'when called twice' do
+      before { subject.sync(message, []) }
+
       it 'does not send announcement and sets up instant timer on the second call' do
-        subject.sync(message, [])
         expect(message).not_to receive(:reply)
         expect(subject).to receive(:Timer).with(0, shots: 1)
         subject.sync(message, [])
