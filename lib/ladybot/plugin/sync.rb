@@ -7,6 +7,27 @@ module Ladybot
     class Sync
       include Cinch::Plugin
 
+      CALLS_TO_ACTION = [
+        "BANG, ZOOM, TO THE MOON, ALICE!",
+        "BLAST OFF",
+        "DYN-O-MITE!",
+        "ENGAGE",
+        "GO",
+        "GOGOGOGOGO",
+        "GOGOGOGOGOGO",
+        "GOOOO",
+        "GOOOOOOO",
+        "GOOOOOOOOOOOOO",
+        "GOOOOOOOOOOOOOOOOOOOOOO",
+        "HIDDIT",
+        "HIT IT",
+        "IT'S MORPHIN' TIME",
+        "MAKE IT SO",
+        "RIP IT",
+        "YABBA DABBA DOO!",
+        "GOGOGOGO",
+      ]
+
       attr_reader :ongoing_syncs
 
       def initialize(bot)
@@ -14,9 +35,9 @@ module Ladybot
         @ongoing_syncs = {}
       end
 
-      match /^sync/, use_prefix: false, method: :sync
-      match /^rdy/,  use_prefix: false, method: :rdy
-      match /^go/,   use_prefix: false, method: :go
+      match(/^sync/, use_prefix: false, method: :sync)
+      match(/^rdy/,  use_prefix: false, method: :rdy)
+      match(/^go/,   use_prefix: false, method: :go)
 
       def sync(message, *args)
         synchronize(message.channel.name) do
@@ -92,7 +113,7 @@ module Ladybot
             Channel(channel).send '1'
             sleep 1.5
 
-            Channel(channel).send 'RIP IT'
+            Channel(channel).send CALLS_TO_ACTION.sample
           end
         end
       end
