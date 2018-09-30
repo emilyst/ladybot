@@ -6,14 +6,9 @@ require 'optparse'
 module Ladybot
   class Bot
     attr_reader :bot
-    def initialize
-      options = parse(ARGV)
-      @bot = cinch_bot(options[:server],
-                       options[:port],
-                       options[:ssl],
-                       options[:nick],
-                       options[:user],
-                       options[:channels])
+
+    def initialize(args = ARGV)
+      @bot = cinch_bot(parse(args))
     end
 
     def parse(args)
@@ -24,7 +19,7 @@ module Ladybot
         p.separator ''
         p.separator 'Options:'
 
-        p.on('-sSERVER', '--server=SERVER', 'Host to connect to') do |o|
+        p.on('-sSERVER', '--server=SERVER', 'Host to connect to (required)') do |o|
           options[:server] = o
         end
 
@@ -32,7 +27,7 @@ module Ladybot
           options[:port] = o
         end
 
-        p.on('-S', '--[no-]ssl', FalseClass, 'Use SSL') do |o|
+        p.on('-S', '--[no-]ssl', TrueClass, 'Use SSL') do |o|
           options[:ssl] = o
         end
 
@@ -40,7 +35,7 @@ module Ladybot
           options[:nick] = o
         end
 
-        p.on('-nUSER', '--user=USER', 'Username for the bot') do |o|
+        p.on('-uUSER', '--user=USER', 'Username for the bot') do |o|
           options[:user] = o
         end
 
@@ -53,17 +48,16 @@ module Ladybot
           puts p
           exit
         end
-
-        p.parse!(args)
       end
 
-      parser.parse!
+      parser.parse(args)
 
       if options[:server].nil?
         puts 'Require a server to which to connect!'
-        puts p
+        puts parser
         exit false
       end
+
       options[:port]     = 6667      if options[:port].nil?
       options[:ssl]      = false     if options[:ssl].nil?
       options[:nick]     = 'ladybot' if options[:nick].nil?
@@ -79,20 +73,15 @@ module Ladybot
                      .select { |c| c.included_modules.include?(Cinch::Plugin) }
     end
 
-    def cinch_bot(server   = '',
-                  port     = 6667,
-                  ssl      = false,
-                  nick     = 'ladybot',
-                  user     = 'ladybot',
-                  channels = [])
+    def cinch_bot(options)
       plugins = discover_plugins
 
       Cinch::Bot.new do
         configure do |c|
-          c.server          = server
-          c.nick            = nick
-          c.user            = user
-          c.channels        = channels
+          c.server          = options[:server]
+          c.nick            = options[:nick]
+          c.user            = options[:user]
+          c.channels        = options[:channels]
           c.plugins.plugins = plugins
         end
       end
