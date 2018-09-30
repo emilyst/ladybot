@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    ladybot (0.1.0)
+    ladybot (0.1.1)
       cinch
 
 GEM
@@ -40,4 +40,4 @@ DEPENDENCIES
   rspec (~> 3.0)
 
 BUNDLED WITH
-   1.16.4
+   1.16.5
