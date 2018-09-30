@@ -77,7 +77,7 @@ module Ladybot
             @ongoing_syncs[message.channel.name] << message.user.nick
 
             "#{message.user.nick}, you've been added to the sync! "\
-            'Just wait for ohers to join, or type "go" or "sync" to '\
+            'Just wait for others to join, or type "go" or "sync" to '\
             'kick off the sync when you\'re ready.'
           end
         end
