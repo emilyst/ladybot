@@ -115,7 +115,7 @@ describe Ladybot::Plugin::Sync do
       end
     end
 
-    context 'no ongoing sync for the current channel' do
+    context 'with no ongoing sync for the current channel' do
       it 'prompts to begin a sync' do
         expect(message).to receive(:reply).with(/Sorry, #{nick}, there's no sync/)
         subject.rdy(message, [])
@@ -177,7 +177,7 @@ describe Ladybot::Plugin::Sync do
   end
 
   context '#countdown' do
-    context 'no ongoing sync for the current channel' do
+    context 'with no ongoing sync for the current channel' do
       it 'does nothing' do
         expect(subject).not_to receive(:Channel)
         expect(subject.countdown(channel)).to be(nil)
