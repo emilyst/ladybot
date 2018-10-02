@@ -7,13 +7,12 @@ describe Ladybot::Plugin::Sync do
     let(:message) { Cinch::Message.new(":#{nick}!user@duckberg.org PRIVMSG #{channel} :sync", bot) }
 
     before do
-      # allows message parsing
+      # allow message parsing
       allow(bot).to receive_message_chain('irc.network') { Cinch::Network.new(:unknown, :unknown) }
       allow(bot).to receive_message_chain('irc.isupport') { Cinch::ISupport.new }
 
-      # allow these methods to call and avoid the default implementation
+      # avoid the default implementation
       allow(message).to receive(:reply)
-      allow(subject).to receive(:Timer)
     end
 
     it 'matches a message starting with "sync" followed by whatever' do
@@ -32,8 +31,11 @@ describe Ladybot::Plugin::Sync do
     context 'when called once' do
       it 'sends announcement and sets up five-minute timer' do
         expect(message).to receive(:reply).with(/#{nick} has started a sync!/)
-        expect(subject).to receive(:Timer).with(5 * 60, shots: 1)
+        expect(subject).to receive(:Timer).with(5 * 60, shots: 1).and_call_original
+
         subject.sync(message, [])
+
+        expect(subject.timers).to include(a_kind_of(Cinch::Timer))
       end
 
       it 'creates an ongoing sync' do
@@ -47,12 +49,16 @@ describe Ladybot::Plugin::Sync do
 
       it 'does not send announcement and sets up instant timer on the second call' do
         expect(message).not_to receive(:reply)
-        expect(subject).to receive(:Timer).with(0, shots: 1)
+        expect(subject).to receive(:Timer).with(0, shots: 1).and_call_original
+
         subject.sync(message, [])
+
+        expect(subject.timers).to include(a_kind_of(Cinch::Timer))
       end
 
       it 'does not replace the ongoing sync' do
         expect(subject).to receive(:Timer).twice
+
         subject.sync(message, [])
         subject.ongoing_syncs[channel] << 'should_not_disappear'
         subject.sync(message, [])
@@ -65,13 +71,12 @@ describe Ladybot::Plugin::Sync do
     let(:message) { Cinch::Message.new(":#{nick}!#{nick}@duckberg.org PRIVMSG #{channel} :rdy", bot) }
 
     before do
-      # allows message parsing
+      # allow message parsing
       allow(bot).to receive_message_chain('irc.network') { Cinch::Network.new(:unknown, :unknown) }
       allow(bot).to receive_message_chain('irc.isupport') { Cinch::ISupport.new }
 
-      # allow these methods to call and avoid the default implementation
+      # avoid the default implementation
       allow(message).to receive(:reply)
-      allow(subject).to receive(:Timer)
     end
 
     it 'matches a message starting with "rdy" followed by whatever' do
@@ -155,14 +160,16 @@ describe Ladybot::Plugin::Sync do
       let(:channel_helper) { Cinch::Channel.new(channel, bot) }
 
       before do
-        # allows Channel#send
+        # allow Channel#send
         allow(subject).to receive(:Channel).and_return(channel_helper)
         allow(bot).to receive_message_chain('irc.send')
         allow(bot).to receive(:mask).and_return(Cinch::Mask.new('huey!dewey?@louie'))
         allow(channel_helper).to receive(:send)
 
+        # allow sleep to return instantly
         allow(subject).to receive(:sleep).and_return(nil)
 
+        # add other participants to the sync
         subject.ongoing_syncs[channel] = [nick, 'huey', 'dewey', 'louie']
       end
 
