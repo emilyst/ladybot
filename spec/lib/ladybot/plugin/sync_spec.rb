@@ -10,13 +10,15 @@ describe Ladybot::Plugin::Sync do
       # allow message parsing
       allow(bot).to receive_message_chain('irc.network') { Cinch::Network.new(:unknown, :unknown) }
       allow(bot).to receive_message_chain('irc.isupport') { Cinch::ISupport.new }
+      allow(bot).to receive_message_chain('irc.send') {  }
 
       # avoid the default implementation
       allow(message).to receive(:reply)
     end
 
     it 'matches a message starting with "sync" followed by whatever' do
-      expect(described_class.matchers).to include(have_attributes(pattern: /^sync/, method: :sync))
+      expect(described_class.matchers)
+        .to include(have_attributes(pattern: /^sync/, method: :sync))
     end
 
     it 'registers and retrieves the appropriate handler for "sync"' do
@@ -30,7 +32,7 @@ describe Ladybot::Plugin::Sync do
 
     context 'when called once' do
       it 'sends announcement and sets up five-minute timer' do
-        expect(message).to receive(:reply).with(/#{nick} has started a sync!/)
+        expect(message).to receive(:reply).with(/#{nick} has started a sync/)
         expect(subject).to receive(:Timer).with(5 * 60, shots: 1).and_call_original
 
         subject.sync(message, [])
@@ -40,32 +42,50 @@ describe Ladybot::Plugin::Sync do
 
       it 'creates an ongoing sync' do
         subject.sync(message, [])
-        expect(subject.ongoing_syncs).to include(channel => [nick])
+
+        expect(subject.ongoing_syncs).to include(channel => {
+          participants: [nick],
+          timers: [a_kind_of(Cinch::Timer)]
+        })
       end
     end
 
     context 'when called twice' do
-      before { subject.sync(message, []) }
+      before { subject.sync(message, []) }  # the first call
 
-      it 'does not send announcement and sets up instant timer on the second call' do
+      it 'does not send sync announcement' do
         expect(message).not_to receive(:reply)
+        subject.sync(message, [])
+      end
+
+      it 'sets up a second, instant timer on the second call' do
         expect(subject).to receive(:Timer).with(0, shots: 1).and_call_original
 
         subject.sync(message, [])
 
-        expect(subject.timers).to include(a_kind_of(Cinch::Timer))
+        # the timers exist...
+        expect(subject.ongoing_syncs).to include({
+          channel => hash_including(timers: [a_kind_of(Cinch::Timer),
+                                             a_kind_of(Cinch::Timer)])
+        })
+
+        # ...and one is instant
+        expect(subject.ongoing_syncs).to include({
+          channel => hash_including(timers: [have_attributes(interval: 300),
+                                             have_attributes(interval: 0)])
+        })
       end
 
-      it 'does not replace the ongoing sync' do
-        expect(subject).to receive(:Timer).twice
+      it 'does not change the ongoing sync participants' do
+        expect(subject).to receive(:Timer).and_call_original
+
+        subject.ongoing_syncs[channel][:participants] << 'should_not_disappear'
 
         subject.sync(message, [])
 
-        subject.ongoing_syncs[channel] << 'should_not_disappear'
-
-        subject.sync(message, [])
-
-        expect(subject.ongoing_syncs).to include(channel => [nick, 'should_not_disappear'])
+        expect(subject.ongoing_syncs).to include({
+          channel => hash_including(participants: [nick, 'should_not_disappear'])
+        })
       end
     end
   end
@@ -108,7 +128,7 @@ describe Ladybot::Plugin::Sync do
     end
 
     context 'with an ongoing sync for the current channel' do
-      before { subject.ongoing_syncs[channel] = [nick] }
+      before { subject.ongoing_syncs[channel] = { participants: [nick] } }
 
       context 'from the user who began the sync' do
         it 'warns the user' do
@@ -124,7 +144,7 @@ describe Ladybot::Plugin::Sync do
 
         it 'adds the user to the sync' do
           subject.rdy(message, [])
-          expect(subject.ongoing_syncs).to include(channel => [nick, 'huey'])
+          expect(subject.ongoing_syncs).to include(channel => { participants: [nick, 'huey'] })
         end
 
         it 'tells the user they are in the sync' do
@@ -136,7 +156,12 @@ describe Ladybot::Plugin::Sync do
     end
 
     context 'with an ongoing sync for another channel' do
-      before { subject.ongoing_syncs['#another_channel'] = [nick] }
+      before do
+        subject.ongoing_syncs['#another_channel'] = {
+          participants: [nick],
+          timers: [Cinch::Timer.new(bot, {}) {}]
+        }
+      end
 
       it 'prompts to begin a sync' do
         expect(message).to receive(:reply).with(/Sorry, #{nick}, there's no sync/)
@@ -171,21 +196,67 @@ describe Ladybot::Plugin::Sync do
 
         # allow sleep to return instantly
         allow(subject).to receive(:sleep).and_return(nil)
-
-        # add other participants to the sync
-        subject.ongoing_syncs[channel] = [nick, 'huey', 'dewey', 'louie']
       end
 
-      it 'removes the ongoing sync' do
-        subject.countdown(channel)
-        expect(subject.ongoing_syncs).to be_empty
+      context 'when the timer has expired' do
+        let(:timer) { Cinch::Timer.new(bot, {interval: 300, shots: 1}) {} }
+
+        before do
+          # add other participants to the sync
+          subject.ongoing_syncs[channel] = {
+            participants: [nick, 'huey', 'dewey', 'louie'],
+            timers: [timer]
+          }
+        end
+
+        it 'removes the ongoing sync' do
+          subject.countdown(channel)
+          expect(subject.ongoing_syncs).to be_empty
+        end
+
+        it 'stops the timer' do
+          expect(timer.stopped?).to be(true)
+        end
+
+        it 'announces the countdown to all participants' do
+          expect(channel_helper).to receive(:send)
+            .with(/Hey, #{nick}, huey, dewey, louie, it's time to sync/)
+
+          subject.countdown(channel)
+        end
       end
 
-      it 'announces the countdown to all participants' do
-        expect(channel_helper).to receive(:send)
-          .with(/Hey, #{nick}, huey, dewey, louie, it's time to sync/)
+      context 'when the timer was preempted' do
+        let(:original_timer) { Cinch::Timer.new(bot, {interval: 300, shots: 1}) {} }
+        let(:short_circuit_timer) { Cinch::Timer.new(bot, {interval: 0, shots: 1}) {} }
 
-        subject.countdown(channel)
+        before do
+          # simulate an early sync
+          subject.ongoing_syncs[channel] = {
+            participants: [nick],
+            timers: [original_timer, short_circuit_timer]
+          }
+        end
+
+        it 'removes the ongoing sync' do
+          subject.countdown(channel)
+          expect(subject.ongoing_syncs).to be_empty
+        end
+
+        it 'stops the original timer' do
+          expect(original_timer.stopped?).to be(true)
+        end
+
+        it 'stops the new short circuit timer' do
+          expect(short_circuit_timer.stopped?).to be(true)
+        end
+
+        it 'announces the countdown to all participants' do
+          expect(channel_helper).to receive(:send)
+            .with(/Hey, #{nick}, it's time to sync/)
+
+          subject.countdown(channel)
+        end
       end
     end
 
