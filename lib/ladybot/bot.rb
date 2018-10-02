@@ -15,7 +15,12 @@ module Ladybot
       options = {}
 
       parser = OptionParser.new do |p|
-        p.banner = 'Usage: ladybot [options]'
+        p.banner = <<~BANNER
+          Ladybot version #{Ladybot::VERSION}
+
+          Usage: ladybot --server <hostname> [options]
+        BANNER
+
         p.separator ''
         p.separator 'Options:'
 
@@ -42,6 +47,11 @@ module Ladybot
         p.on('-cCHANNEL', '--channel=CHANNEL', 'Channel to join (use more than once if needed)') do |o|
           options[:channels] = [] if options[:channels].nil?
           options[:channels] << o
+        end
+
+        p.on_tail('-v', '--version', 'Show version of Ladybot') do
+          puts 'Ladybot version ' + Ladybot::VERSION
+          exit
         end
 
         p.on_tail('-h', '--help', 'Show this message') do
