@@ -119,9 +119,7 @@ module Ladybot
             Channel(channel).send CALLS_TO_ACTION.sample
 
             # do this last (this kills the threads)
-            timers.each do |timer|
-              timer.stop if timer.started?
-            end
+            timers.each { |t| t.stop if t.started? }
           end
         end
       end
