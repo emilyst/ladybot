@@ -40,7 +40,7 @@ describe Ladybot::Plugin::Sync do
 
       it 'creates an ongoing sync' do
         subject.sync(message, [])
-        expect(subject.ongoing_syncs).to include(channel => ['scrooge'])
+        expect(subject.ongoing_syncs).to include(channel => [nick])
       end
     end
 
@@ -60,9 +60,12 @@ describe Ladybot::Plugin::Sync do
         expect(subject).to receive(:Timer).twice
 
         subject.sync(message, [])
+
         subject.ongoing_syncs[channel] << 'should_not_disappear'
+
         subject.sync(message, [])
-        expect(subject.ongoing_syncs).to include(channel => ['scrooge', 'should_not_disappear'])
+
+        expect(subject.ongoing_syncs).to include(channel => [nick, 'should_not_disappear'])
       end
     end
   end
@@ -121,7 +124,7 @@ describe Ladybot::Plugin::Sync do
 
         it 'adds the user to the sync' do
           subject.rdy(message, [])
-          expect(subject.ongoing_syncs).to include(channel => ['scrooge', 'huey'])
+          expect(subject.ongoing_syncs).to include(channel => [nick, 'huey'])
         end
 
         it 'tells the user they are in the sync' do
@@ -180,7 +183,8 @@ describe Ladybot::Plugin::Sync do
 
       it 'announces the countdown to all participants' do
         expect(channel_helper).to receive(:send)
-          .with(/Hey, scrooge, huey, dewey, louie, it's time to sync/)
+          .with(/Hey, #{nick}, huey, dewey, louie, it's time to sync/)
+
         subject.countdown(channel)
       end
     end
