@@ -50,42 +50,90 @@ describe Ladybot::Plugin::Sync do
       end
     end
 
-    context 'when called twice' do
-      before { subject.sync(message, []) }  # the first call
+    context 'when called again' do
+      before { subject.sync(message, []) }  # the first call to begin the sync
 
-      it 'does not send sync announcement' do
-        expect(message).not_to receive(:reply)
-        subject.sync(message, [])
+      context 'by a participant' do
+        it 'does not send sync announcement' do
+          expect(message).not_to receive(:reply)
+          subject.sync(message, [])
+        end
+
+        it 'sets up a second, instant timer on the second call' do
+          expect(subject).to receive(:Timer).with(0, shots: 1).and_call_original
+
+          subject.sync(message, [])
+
+          # the timers exist...
+          expect(subject.ongoing_syncs).to include({
+            channel => hash_including(timers: [a_kind_of(Cinch::Timer),
+                                               a_kind_of(Cinch::Timer)])
+          })
+
+          # ...and one is instant
+          expect(subject.ongoing_syncs).to include({
+            channel => hash_including(timers: [have_attributes(interval: 300),
+                                               have_attributes(interval: 0)])
+          })
+        end
+
+        it 'does not change the ongoing sync participants' do
+          expect(subject).to receive(:Timer).and_call_original
+
+          subject.ongoing_syncs[channel][:participants] << 'should_not_disappear'
+
+          subject.sync(message, [])
+
+          expect(subject.ongoing_syncs).to include({
+            channel => hash_including(participants: [nick, 'should_not_disappear'])
+          })
+        end
       end
 
-      it 'sets up a second, instant timer on the second call' do
-        expect(subject).to receive(:Timer).with(0, shots: 1).and_call_original
+      context 'by a non-participant' do
+        let(:huey) { 'huey' }
+        let(:non_participant_message) do
+          Cinch::Message.new(":#{huey}!#{huey}@duckberg.org PRIVMSG #{channel} :sync", bot)
+        end
 
-        subject.sync(message, [])
+        before do
+          allow(non_participant_message).to receive(:reply)
+        end
 
-        # the timers exist...
-        expect(subject.ongoing_syncs).to include({
-          channel => hash_including(timers: [a_kind_of(Cinch::Timer),
-                                             a_kind_of(Cinch::Timer)])
-        })
+        it 'does not send sync announcement' do
+          expect(non_participant_message).not_to receive(:reply)
+          subject.sync(message, [])
+        end
 
-        # ...and one is instant
-        expect(subject.ongoing_syncs).to include({
-          channel => hash_including(timers: [have_attributes(interval: 300),
-                                             have_attributes(interval: 0)])
-        })
-      end
+        it 'does not set up a second, instant timer on the second call' do
+          expect(subject).not_to receive(:Timer).with(0, shots: 1)
 
-      it 'does not change the ongoing sync participants' do
-        expect(subject).to receive(:Timer).and_call_original
+          subject.sync(non_participant_message, [])
 
-        subject.ongoing_syncs[channel][:participants] << 'should_not_disappear'
+          # only one timer exists...
+          expect(subject.ongoing_syncs).to include({
+            channel => hash_including(timers: [a_kind_of(Cinch::Timer)])
+          })
 
-        subject.sync(message, [])
+          # ...and it is not instant
+          expect(subject.ongoing_syncs).to include({
+            channel => hash_including(timers: [have_attributes(interval: 300)])
+          })
+        end
 
-        expect(subject.ongoing_syncs).to include({
-          channel => hash_including(participants: [nick, 'should_not_disappear'])
-        })
+        it 'does not change the ongoing sync participants' do
+          subject.sync(non_participant_message, [])
+          expect(subject.ongoing_syncs).to include({
+            channel => hash_including(participants: [nick])
+          })
+        end
+
+        it 'warns the non-participant they cannot start the sync' do
+          expect(non_participant_message)
+            .to receive(:reply)
+            .with(/#{huey}, there's already a sync going on/)
+          subject.sync(non_participant_message, [])
+        end
       end
     end
   end

@@ -58,6 +58,11 @@ module Ladybot
                     'you\'re ready.'
 
             message.reply reply
+          elsif @ongoing_syncs.has_key?(channel) &&
+                !@ongoing_syncs[channel][:participants].include?(nick)
+            warning = "#{nick}, there's already a sync going on. Join "\
+              'in on that one by saying "rdy".'
+            message.reply warning
           else
             # if a sync is already ongoing, stop its timer, throw it
             # away, and kick off the countdown in another (instant)
