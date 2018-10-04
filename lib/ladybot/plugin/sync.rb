@@ -7,24 +7,29 @@ module Ladybot
     class Sync
       include Cinch::Plugin
 
-      CALLS_TO_ACTION = ["BLAST OFF",
-                         "DYN-O-MITE!",
-                         "ENGAGE",
-                         "GO",
-                         "GOGOGOGO",
-                         "GOGOGOGOGO",
-                         "GOGOGOGOGOGO",
-                         "GOOOO",
-                         "GOOOOOOO",
-                         "GOOOOOOOOOOOOO",
-                         "GOOOOOOOOOOOOOOOOOOOOOO",
-                         "HIDDIT",
-                         "HIT IT",
-                         "IT'S MORPHIN' TIME",
-                         "MAKE IT SO",
-                         "RIP IT",
-                         "YABBA DABBA DOO!",
-                         "BANG, ZOOM, TO THE MOON, ALICE!"].freeze
+      CALLS_TO_ACTION = [
+        "BANG, ZOOM, TO THE MOON, ALICE!",
+        "BLAST OFF",
+        "BRING IT ON HOME",
+        "DOHOHO",
+        "DYN-O-MITE!",
+        "ENGAGE",
+        "EPIC WIN",
+        "GO",
+        "GOGOGOGO",
+        "GOGOGOGOGOGO",
+        "GOOOO",
+        "GOOOOOOO",
+        "GOOOOOOOOOOOOO",
+        "HIDDIT",
+        "HIT IT",
+        "IT'S MORPHIN' TIME",
+        "MAKE IT SO",
+        "METAL GEAR?!?!",
+        "RIP IT",
+        "SWEET SASSY MOLASSY",
+        "YABBA DABBA DOO!",
+      ].freeze
 
       attr_reader :ongoing_syncs
 
