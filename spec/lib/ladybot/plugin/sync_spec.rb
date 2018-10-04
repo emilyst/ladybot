@@ -140,6 +140,7 @@ describe Ladybot::Plugin::Sync do
 
   context 'rdy command' do
     let(:message) { Cinch::Message.new(":#{nick}!#{nick}@duckberg.org PRIVMSG #{channel} :rdy", bot) }
+    let(:ready_message) { Cinch::Message.new(":#{nick}!#{nick}@duckberg.org PRIVMSG #{channel} :ready", bot) }
 
     before do
       # allow message parsing
@@ -151,7 +152,7 @@ describe Ladybot::Plugin::Sync do
     end
 
     it 'matches a message starting with "rdy" followed by whatever' do
-      expect(described_class.matchers).to include(have_attributes(pattern: /^rdy/, method: :rdy))
+      expect(described_class.matchers).to include(have_attributes(pattern: /^r(ea)?dy/, method: :rdy))
     end
 
     it 'registers and retrieves the appropriate handler for "rdy"' do
@@ -159,6 +160,15 @@ describe Ladybot::Plugin::Sync do
         expect(bot.handlers.find(:message, message)).to include(a_kind_of(Cinch::Handler))
         expect(bot.handlers.find(:message, message).first).to satisfy do |handler|
           expect(handler.pattern.pattern).to eq(/^rdy/)
+        end
+      end
+    end
+
+    it 'retrieves the appropriate handler for "ready"' do
+      subject do
+        expect(bot.handlers.find(:message, ready_message)).to include(a_kind_of(Cinch::Handler))
+        expect(bot.handlers.find(:message, ready_message).first).to satisfy do |handler|
+          expect(handler.pattern.pattern).to eq(/^r(ea)?dy/)
         end
       end
     end

@@ -33,9 +33,9 @@ module Ladybot
         @ongoing_syncs = {}
       end
 
-      match(/^sync/, use_prefix: false, method: :sync)
-      match(/^rdy/,  use_prefix: false, method: :rdy)
-      match(/^go/,   use_prefix: false, method: :go)
+      match(/^sync/,      use_prefix: false, method: :sync)
+      match(/^r(ea)?dy/,  use_prefix: false, method: :rdy)
+      match(/^go/,        use_prefix: false, method: :go)
 
       def sync(message, *args)
         channel = message.channel.name
