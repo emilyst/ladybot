@@ -6,15 +6,7 @@ describe Ladybot::Plugin::Sync do
   context 'sync command' do
     let(:message) { Cinch::Message.new(":#{nick}!user@duckberg.org PRIVMSG #{channel} :sync", bot) }
 
-    before do
-      # allow message parsing
-      allow(bot).to receive_message_chain('irc.network') { Cinch::Network.new(:unknown, :unknown) }
-      allow(bot).to receive_message_chain('irc.isupport') { Cinch::ISupport.new }
-      allow(bot).to receive_message_chain('irc.send') {  }
-
-      # avoid the default implementation
-      allow(message).to receive(:reply)
-    end
+    before { allow(message).to receive(:reply) }
 
     it 'matches a message starting with "sync" followed by whatever' do
       expect(described_class.matchers)
@@ -23,7 +15,7 @@ describe Ladybot::Plugin::Sync do
 
     it 'registers and retrieves the appropriate handler for "sync"' do
       subject do
-        expect(bot.handlers.find(:message, message)).to include(a_kind_of(Cinch::Handler))
+        expect(bot.handlers.find(:message, message)).to eq([a_kind_of(Cinch::Handler)])
         expect(bot.handlers.find(:message, message).first).to satisfy do |handler|
           expect(handler.pattern.pattern).to eq(/^sync/)
         end
@@ -144,22 +136,13 @@ describe Ladybot::Plugin::Sync do
     let(:message) { Cinch::Message.new(":#{nick}!#{nick}@duckberg.org PRIVMSG #{channel} :rdy", bot) }
     let(:ready_message) { Cinch::Message.new(":#{nick}!#{nick}@duckberg.org PRIVMSG #{channel} :ready", bot) }
 
-    before do
-      # allow message parsing
-      allow(bot).to receive_message_chain('irc.network') { Cinch::Network.new(:unknown, :unknown) }
-      allow(bot).to receive_message_chain('irc.isupport') { Cinch::ISupport.new }
-
-      # avoid the default implementation
-      allow(message).to receive(:reply)
-    end
-
     it 'matches a message starting with "rdy" followed by whatever' do
       expect(described_class.matchers).to include(have_attributes(pattern: /^r(ea)?dy/, method: :rdy))
     end
 
     it 'registers and retrieves the appropriate handler for "rdy"' do
       subject do
-        expect(bot.handlers.find(:message, message)).to include(a_kind_of(Cinch::Handler))
+        expect(bot.handlers.find(:message, message)).to eq([a_kind_of(Cinch::Handler)])
         expect(bot.handlers.find(:message, message).first).to satisfy do |handler|
           expect(handler.pattern.pattern).to eq(/^rdy/)
         end
@@ -168,7 +151,7 @@ describe Ladybot::Plugin::Sync do
 
     it 'retrieves the appropriate handler for "ready"' do
       subject do
-        expect(bot.handlers.find(:message, ready_message)).to include(a_kind_of(Cinch::Handler))
+        expect(bot.handlers.find(:message, ready_message)).to eq([a_kind_of(Cinch::Handler)])
         expect(bot.handlers.find(:message, ready_message).first).to satisfy do |handler|
           expect(handler.pattern.pattern).to eq(/^r(ea)?dy/)
         end
@@ -245,21 +228,8 @@ describe Ladybot::Plugin::Sync do
     end
 
     context 'with an ongoing sync for the current channel' do
-      let(:channel_helper) { Cinch::Channel.new(channel, bot) }
-
-      before do
-        # allow Channel#send
-        allow(subject).to receive(:Channel).and_return(channel_helper)
-        allow(bot).to receive_message_chain('irc.send')
-        allow(bot).to receive(:mask).and_return(Cinch::Mask.new('huey!dewey?@louie'))
-        allow(channel_helper).to receive(:send)
-
-        # allow sleep to return instantly
-        allow(subject).to receive(:sleep).and_return(nil)
-      end
-
       context 'when the timer has expired' do
-        let(:timer) { Cinch::Timer.new(bot, {interval: 300, shots: 1}) {} }
+        let(:timer) { Cinch::Timer.new(bot, { interval: 300, shots: 1 }) {} }
 
         before do
           # add other participants to the sync
@@ -279,7 +249,7 @@ describe Ladybot::Plugin::Sync do
         end
 
         it 'announces the countdown to all participants' do
-          expect(channel_helper).to receive(:send)
+          expect(channel_helper_response).to receive(:send)
             .with(/Hey, #{nick}, huey, dewey, louie, it's time to sync/)
 
           subject.countdown(channel)
@@ -287,8 +257,8 @@ describe Ladybot::Plugin::Sync do
       end
 
       context 'when the timer was preempted' do
-        let(:original_timer) { Cinch::Timer.new(bot, {interval: 300, shots: 1}) {} }
-        let(:short_circuit_timer) { Cinch::Timer.new(bot, {interval: 0, shots: 1}) {} }
+        let(:original_timer) { Cinch::Timer.new(bot, { interval: 300, shots: 1 }) {} }
+        let(:short_circuit_timer) { Cinch::Timer.new(bot, { interval: 0, shots: 1 }) {} }
 
         before do
           # simulate an early sync
@@ -312,7 +282,7 @@ describe Ladybot::Plugin::Sync do
         end
 
         it 'announces the countdown to all participants' do
-          expect(channel_helper).to receive(:send)
+          expect(channel_helper_response).to receive(:send)
             .with(/Hey, #{nick}, it's time to sync/)
 
           subject.countdown(channel)
