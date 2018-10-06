@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 describe Ladybot::Bot do
-  let(:args) { %w/ --server localhost / }
+  let(:args) { %w( --server localhost ) }
 
   subject { described_class.new(args) }
 
@@ -17,7 +17,7 @@ describe Ladybot::Bot do
 
   context 'with long args' do
     let(:args) do
-      %w/
+      %w(
         --server localhost
         --port 6697
         --ssl
@@ -25,7 +25,7 @@ describe Ladybot::Bot do
         --user mcduck
         --channel #duckberg
         --channel #scotland
-      /
+      )
     end
 
     it 'parses the args' do
@@ -41,7 +41,7 @@ describe Ladybot::Bot do
 
   context 'with short args' do
     let(:args) do
-      %w/
+      %w(
         -s localhost
         -p 6697
         -S
@@ -49,7 +49,7 @@ describe Ladybot::Bot do
         -u mcduck
         -c #duckberg
         -c #scotland
-      /
+      )
     end
 
     it 'parses the args' do
@@ -65,10 +65,10 @@ describe Ladybot::Bot do
 
   context 'with explicitly no SSL' do
     let(:args) do
-      %w/
+      %w(
         --server localhost
         --no-ssl
-      /
+      )
     end
 
     it 'parses the args' do
