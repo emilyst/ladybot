@@ -7,14 +7,13 @@ module Ladybot
     class Quit
       include Cinch::Plugin
 
-      EXPRESSIONS = ["be gone",
-                     "go home",
-                     "quit"].freeze
+      EXPRESSIONS = [
+        "be gone",
+        "go home",
+        "quit",
+      ].freeze
 
-      # force match to begin with bot's nick, e.g., "ladybot: leave"
-      set :prefix, lambda { |m| Regexp.new('^' + Regexp.escape(m.bot.nick) + '[,:]?\s+') }
-
-      match(/(#{EXPRESSIONS.join('|')})/i)
+      match(/(#{EXPRESSIONS.join('|')})/i, use_prefix: true)
 
       def execute(message, *args)
         bot.quit('Ladybot version ' + Ladybot::VERSION)

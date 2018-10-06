@@ -7,9 +7,6 @@ module Ladybot
     class Join
       include Cinch::Plugin
 
-      # force match to begin with bot's nick, e.g., "ladybot: part"
-      set :prefix, lambda { |m| Regexp.new('^' + Regexp.escape(m.bot.nick) + '[,:]?\s+') }
-
       match(/join\s+([&#+!][\S]{1,50})/i)
 
       def execute(message, channel)

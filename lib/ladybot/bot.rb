@@ -93,6 +93,10 @@ module Ladybot
           c.user            = options[:user]
           c.channels        = options[:channels]
           c.plugins.plugins = plugins
+
+          # bot has to be addressed with its nick
+          c.plugins.prefix  =
+            Regexp.new('^' + Regexp.escape(options[:nick]) + '[,:]?\s+')
         end
       end
     end
