@@ -31,11 +31,12 @@ module Ladybot
         "YABBA DABBA DOO!",
       ].freeze
 
-      attr_reader :ongoing_syncs
+      attr_reader :ongoing_syncs, :regulars
 
       def initialize(bot)
         super(bot)
         @ongoing_syncs = {}
+        @regulars = {}
       end
 
       match(/^sync/,      use_prefix: false, method: :sync)
@@ -46,7 +47,7 @@ module Ladybot
         channel = message.channel.name
         nick = message.user.nick
 
-        synchronize(channel) do
+        reply = synchronize(channel) do
           if !@ongoing_syncs.has_key?(channel)
             @ongoing_syncs[channel] = {}
             @ongoing_syncs[channel][:participants] = [nick]
@@ -55,29 +56,34 @@ module Ladybot
             @ongoing_syncs[channel][:timers] =
               [Timer(5 * 60, shots: 1) { countdown(channel) }]
 
-            reply = "#{nick} has started a sync! Type \"rdy\" to join "\
-                    'the sync! I will notify everyone in the sync '\
-                    'when it begins. The sync will begin '\
-                    'automatically in five minutes. To kick it off '\
-                    'yourself, type "sync" again or "go" when '\
-                    'you\'re ready.'
+            <<~REPLY
+              #{nick} has started a sync! Type "rdy" to join the sync! I
+              will notify everyone in the sync when it begins. The sync
+              will begin automatically in five minutes. To kick it off
+              yourself, type "sync" again or "go" when you're ready.
+            REPLY
 
-            message.reply reply
           elsif @ongoing_syncs.has_key?(channel) &&
                 !@ongoing_syncs[channel][:participants].include?(nick)
-            warning = "#{nick}, there's already a sync going on. Join "\
-              'in on that one by saying "rdy".'
-            message.reply warning
+            <<~REPLY
+              #{nick}, there's already a sync going on. Join in on that
+              one by saying "rdy".
+            REPLY
           else
             # if a sync is already ongoing, stop its timer, throw it
             # away, and kick off the countdown in another (instant)
             # timer so that I can borrow its thread group to make a new
             # thread outside of this one, where mutex sync won't be an
             # issue
-            @ongoing_syncs[channel][:timers] <<
-              Timer(0, shots: 1) { countdown(channel) }
+            @ongoing_syncs[channel][:timers].push(Timer(0, shots: 1) { countdown(channel) })
+
+            <<~REPLY
+              #{nick}, you've kicked off the sync early!
+            REPLY
           end
-        end
+        end.gsub(/\n/m, ' ').strip
+
+        message.reply reply
       end
 
       def rdy(message, *args)
@@ -86,45 +92,58 @@ module Ladybot
 
         reply = synchronize(channel) do
           if !@ongoing_syncs.has_key?(channel)
-            "Sorry, #{nick}, there's no sync going. Type \"sync\" to "\
-            'start one off!'
+            <<~REPLY
+              Sorry, #{nick}, there's no sync going. Type "sync" to
+              start one off!
+            REPLY
           elsif @ongoing_syncs.has_key?(channel) &&
                 @ongoing_syncs[channel][:participants].include?(nick)
-            "Sorry, #{nick}, you're already in the sync. Just wait "\
-            'for it to kick off automatically, or type "go" or sync '\
-            'to kick it off yourself when you\'re ready.'
+            <<~REPLY
+              Sorry, #{nick}, you're already in the sync. Just wait for
+              it to kick off automatically, or type "go" or sync to kick
+              it off yourself when you're ready.
+            REPLY
           else
-            @ongoing_syncs[channel][:participants] << nick
+            @ongoing_syncs[channel][:participants].push(nick)
 
-            "#{nick}, you've been added to the sync! Just wait for "\
-            'others to join, or type "go" or "sync" to kick off the '\
-            'the sync when you\'re ready.'
+            <<~REPLY
+              #{nick}, you've been added to the sync! Just wait for
+              others to join, or type "go" or "sync" to kick off the
+              sync when you're ready.
+            REPLY
           end
-        end
+        end.gsub(/\n/m, ' ').strip
 
         message.reply reply
       end
 
       def go(message, *args)
-        countdown(message.channel.name)
+        # reuse the logic from sync method, without synchronizing
+        # because it would nest synchronize scopes and because the other
+        # method will synchronize anyway
+        sync(message, args) if @ongoing_syncs.has_key?(channel)
       end
 
       def countdown(channel)
         synchronize(channel) do
           if @ongoing_syncs.has_key?(channel)
-            og = @ongoing_syncs[channel]
+            channel_sync = @ongoing_syncs[channel]
 
-            participants = og[:participants].uniq.join(', ')
-            timers = og[:timers]
+            timers = channel_sync[:timers]
+            regulars = @regulars.has_key?(channel) ? @regulars[channel] : []
+            participants = channel_sync[:participants]
 
             @ongoing_syncs.delete(channel)
 
-            announce = "Hey, #{participants}, it's time to sync in five seconds!"
+            announce = <<~ANNOUNCE
+              Hey, #{(participants + regulars).uniq.join(', ')}, it's
+              time to sync in five seconds! Ready?
+            ANNOUNCE
 
-            Channel(channel).send announce; sleep 5
-            Channel(channel).send '3';      sleep 1.5
-            Channel(channel).send '2';      sleep 1.5
-            Channel(channel).send '1';      sleep 1.5
+            Channel(channel).send announce.gsub(/\n/m, ' ').strip; sleep 5
+            Channel(channel).send '3';                             sleep 1.5
+            Channel(channel).send '2';                             sleep 1.5
+            Channel(channel).send '1';                             sleep 1.5
 
             Channel(channel).send CALLS_TO_ACTION.sample
 

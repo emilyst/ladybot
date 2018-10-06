@@ -54,9 +54,11 @@ describe Ladybot::Plugin::Sync do
       before { subject.sync(message, args) }  # the first call to begin the sync
 
       context 'by a participant' do
-        it 'does not send sync announcement' do
-          expect(message).not_to receive(:reply)
-          subject.sync(message, [])
+        it 'announces the sync is starting early' do
+          expect(message)
+            .to receive(:reply)
+            .with(/#{nick}, you've kicked off the sync early!/)
+          subject.sync(message, args)
         end
 
         it 'sets up a second, instant timer on the second call' do
