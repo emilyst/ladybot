@@ -30,7 +30,7 @@ describe Ladybot::Plugin::Part do
 
     it 'parts' do
       expect(bot).to receive(:part).with(channel, a_kind_of(String))
-      subject.execute(message, [])
+      subject.execute(message, args)
     end
   end
 end

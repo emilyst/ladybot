@@ -15,7 +15,8 @@ describe Ladybot::Plugin::Join do
     end
 
     it 'matches a message telling the bot to leave' do
-      expect(described_class.matchers) .to include(have_attributes(pattern: /join\s+([&#+!][\S]{1,50})/i))
+      expect(described_class.matchers)
+        .to include(have_attributes(pattern: /join\s+([&#+!][\S]{1,50})/i))
     end
 
     it 'registers and retrieves the appropriate handler for jointing' do

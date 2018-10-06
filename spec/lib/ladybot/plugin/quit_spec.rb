@@ -30,7 +30,7 @@ describe Ladybot::Plugin::Quit do
 
     it 'quits' do
       expect(bot).to receive(:quit).with(a_kind_of(String))
-      subject.execute(message, [])
+      subject.execute(message, args)
     end
   end
 end

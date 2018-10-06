@@ -35,13 +35,13 @@ describe Ladybot::Plugin::Sync do
         expect(message).to receive(:reply).with(/#{nick} has started a sync/)
         expect(subject).to receive(:Timer).with(5 * 60, shots: 1).and_call_original
 
-        subject.sync(message, [])
+        subject.sync(message, args)
 
         expect(subject.timers).to include(a_kind_of(Cinch::Timer))
       end
 
       it 'creates an ongoing sync' do
-        subject.sync(message, [])
+        subject.sync(message, args)
 
         expect(subject.ongoing_syncs).to include(channel => {
           participants: [nick],
@@ -51,7 +51,7 @@ describe Ladybot::Plugin::Sync do
     end
 
     context 'when called again' do
-      before { subject.sync(message, []) }  # the first call to begin the sync
+      before { subject.sync(message, args) }  # the first call to begin the sync
 
       context 'by a participant' do
         it 'does not send sync announcement' do
@@ -62,7 +62,7 @@ describe Ladybot::Plugin::Sync do
         it 'sets up a second, instant timer on the second call' do
           expect(subject).to receive(:Timer).with(0, shots: 1).and_call_original
 
-          subject.sync(message, [])
+          subject.sync(message, args)
 
           # the timers exist...
           expect(subject.ongoing_syncs).to include({
@@ -82,7 +82,7 @@ describe Ladybot::Plugin::Sync do
 
           subject.ongoing_syncs[channel][:participants] << 'should_not_disappear'
 
-          subject.sync(message, [])
+          subject.sync(message, args)
 
           expect(subject.ongoing_syncs).to include({
             channel => hash_including(participants: [nick, 'should_not_disappear'])
@@ -102,13 +102,13 @@ describe Ladybot::Plugin::Sync do
 
         it 'does not send sync announcement' do
           expect(non_participant_message).not_to receive(:reply)
-          subject.sync(message, [])
+          subject.sync(message, args)
         end
 
         it 'does not set up a second, instant timer on the second call' do
           expect(subject).not_to receive(:Timer).with(0, shots: 1)
 
-          subject.sync(non_participant_message, [])
+          subject.sync(non_participant_message, args)
 
           # only one timer exists...
           expect(subject.ongoing_syncs).to include({
@@ -122,7 +122,7 @@ describe Ladybot::Plugin::Sync do
         end
 
         it 'does not change the ongoing sync participants' do
-          subject.sync(non_participant_message, [])
+          subject.sync(non_participant_message, args)
           expect(subject.ongoing_syncs).to include({
             channel => hash_including(participants: [nick])
           })
@@ -132,7 +132,7 @@ describe Ladybot::Plugin::Sync do
           expect(non_participant_message)
             .to receive(:reply)
             .with(/#{huey}, there's already a sync going on/)
-          subject.sync(non_participant_message, [])
+          subject.sync(non_participant_message, args)
         end
       end
     end
@@ -176,11 +176,11 @@ describe Ladybot::Plugin::Sync do
     context 'with no ongoing sync for the current channel' do
       it 'prompts to begin a sync' do
         expect(message).to receive(:reply).with(/Sorry, #{nick}, there's no sync/)
-        subject.rdy(message, [])
+        subject.rdy(message, args)
       end
 
       it 'does not create an ongoing sync' do
-        subject.rdy(message, [])
+        subject.rdy(message, args)
         expect(subject.ongoing_syncs).to be_empty
       end
     end
@@ -192,7 +192,7 @@ describe Ladybot::Plugin::Sync do
         it 'warns the user' do
           expect(message).to receive(:reply)
             .with(/Sorry, #{nick}, you're already in the sync/)
-          subject.rdy(message, [])
+          subject.rdy(message, args)
         end
       end
 
@@ -201,14 +201,14 @@ describe Ladybot::Plugin::Sync do
         let(:message) { Cinch::Message.new(":#{huey}!#{huey}@duckberg.org PRIVMSG #{channel} :rdy", bot) }
 
         it 'adds the user to the sync' do
-          subject.rdy(message, [])
+          subject.rdy(message, args)
           expect(subject.ongoing_syncs).to include(channel => { participants: [nick, 'huey'] })
         end
 
         it 'tells the user they are in the sync' do
           expect(message).to receive(:reply)
             .with(/#{huey}, you've been added to the sync/)
-          subject.rdy(message, [])
+          subject.rdy(message, args)
         end
       end
     end
@@ -224,11 +224,11 @@ describe Ladybot::Plugin::Sync do
       it 'prompts to begin a sync' do
         expect(message).to receive(:reply).with(/Sorry, #{nick}, there's no sync/)
         subject.ongoing_syncs['#another_channel'] = [nick]
-        subject.rdy(message, [])
+        subject.rdy(message, args)
       end
 
       it 'does not create an ongoing sync in that channel' do
-        subject.rdy(message, [])
+        subject.rdy(message, args)
         expect(subject.ongoing_syncs).not_to include(channel)
       end
     end

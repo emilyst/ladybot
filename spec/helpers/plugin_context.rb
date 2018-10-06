@@ -14,6 +14,8 @@ shared_context 'plugin context', shared_context: :metadata do
       end
   end
 
+  let(:args) { [] }
+
   subject { described_class.new(bot) }
 
   before { bot.loggers.level = :fatal }
