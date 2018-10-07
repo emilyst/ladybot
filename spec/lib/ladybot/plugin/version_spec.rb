@@ -27,7 +27,7 @@ describe Ladybot::Plugin::Version do
         expect(message.user)
           .to receive(:notice)
           .with("\u0001VERSION Ladybot version #{Ladybot::VERSION}\u0001")
-        subject.execute(message, args)
+        subject.ctcp_version(message, args)
       end
     end
 
@@ -54,8 +54,35 @@ describe Ladybot::Plugin::Version do
         expect(message.user)
           .to receive(:notice)
           .with("\u0001VERSION Ladybot version #{Ladybot::VERSION}\u0001")
-        subject.execute(message, args)
+        subject.ctcp_version(message, args)
       end
+    end
+  end
+
+  context 'PRIVMSG version' do
+    let(:message) do
+      Cinch::Message.new(":#{nick}!user@duckberg.org PRIVMSG #{channel} :#{bot.nick}: VERSION", bot)
+    end
+
+    it 'matches CTCP version request' do
+      expect(described_class.matchers)
+        .to include(have_attributes(pattern: /version/i))
+    end
+
+    it 'registers and retrieves the appropriate handler for the CTCP' do
+      subject do
+        expect(bot.handlers.find(:message, message)).to eq([a_kind_of(Cinch::Handler)])
+        expect(bot.handlers.find(:message, message).first).to satisfy do |handler|
+          expect(handler.pattern.pattern).to eq(/version/i)
+        end
+      end
+    end
+
+    it 'replies with the version' do
+      expect(message)
+        .to receive(:reply)
+        .with("Ladybot version #{Ladybot::VERSION}")
+      subject.message_version(message, args)
     end
   end
 end

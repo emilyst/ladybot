@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    ladybot (0.6.0)
+    ladybot (0.7.0)
       cinch
 
 GEM
