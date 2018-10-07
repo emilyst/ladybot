@@ -35,4 +35,6 @@ shared_context 'plugin context', shared_context: :metadata do
     # allow sleep to return instantly
     allow(subject).to receive(:sleep).and_return(nil)
   end
+
+  after { subject.timers.each { |t| t.stop if t.started? } }
 end
