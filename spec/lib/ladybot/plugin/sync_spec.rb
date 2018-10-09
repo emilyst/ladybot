@@ -92,14 +92,35 @@ describe Ladybot::Plugin::Sync do
           .to receive(:send)
           .with(/Hey, huey, dewey, louie, a new sync just started./)
 
-        subject.notify_regulars(channel)
+        subject.notify_regulars(channel, nick)
+      end
+
+      context 'when triggered by one of the regulars' do
+        before { subject.regulars[channel] = %w(scrooge huey dewey louie) }
+
+        it 'does not notify the regular who sent the notification' do
+          expect(channel_helper_response)
+            .to receive(:send)
+            .with(/Hey, huey, dewey, louie, a new sync just started./)
+
+          subject.notify_regulars(channel, nick)
+        end
+
+        context 'when the only regular is the one who triggered the sync' do
+          before { subject.regulars[channel] = %w(scrooge) }
+
+          it 'sends no message to the channel' do
+            expect(channel_helper_response).not_to receive(:send)
+            subject.notify_regulars(channel, nick)
+          end
+        end
       end
     end
 
     context 'regulars do not exist' do
       it 'sends no message to the channel' do
         expect(channel_helper_response).not_to receive(:send)
-        subject.notify_regulars(channel)
+        subject.notify_regulars(channel, nick)
       end
     end
   end
@@ -166,7 +187,7 @@ describe Ladybot::Plugin::Sync do
           expect(subject.timers).to include(have_attributes(interval: 0.5))
 
           # ...and when it does, it notifies the regulars
-          expect(subject).to receive(:notify_regulars)
+          expect(subject).to receive(:notify_regulars).with(channel, nick)
           subject.timers.first.block.call
         end
       end

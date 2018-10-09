@@ -97,17 +97,21 @@ module Ladybot
         message.reply reply
       end
 
-      def notify_regulars(channel)
+      def notify_regulars(channel, nick)
         synchronize(channel) do
           regulars = @regulars[channel]
 
-          unless regulars.nil? || regulars.empty?
-            announce = <<~ANNOUNCE
-              Hey, #{regulars.uniq.join(', ')}, a new sync just started.
-              Get ready. I'll notify you again at the countdown.
-            ANNOUNCE
+          unless regulars.nil?
+            recipients = regulars.uniq.reject { |r| r == nick }
 
-            Channel(channel).send announce.gsub(/\n(?!$)/m, ' ')
+            unless recipients.empty?
+              announce = <<~ANNOUNCE
+              Hey, #{recipients.join(', ')}, a new sync just started.
+              Get ready. I'll notify you again at the countdown.
+              ANNOUNCE
+
+              Channel(channel).send announce.gsub(/\n(?!$)/m, ' ')
+            end
           end
         end
       end
@@ -137,7 +141,7 @@ module Ladybot
             # notify regulars of the new sync
             unless @regulars[channel].empty?
               @ongoing_syncs[channel][:timers]
-                .push(Timer(0.5, shots: 1) { notify_regulars(channel) })
+                .push(Timer(0.5, shots: 1) { notify_regulars(channel, nick) })
             end
 
             <<~REPLY
