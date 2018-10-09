@@ -161,13 +161,11 @@ module Ladybot
             @ongoing_syncs[channel][:timers]
               .push(Timer(0.5, shots: 1) { countdown(channel) })
 
-            <<~REPLY
-              #{nick} has kicked off the sync early!
-            REPLY
+            ''  # no reply, everyone's about to get notified anyway
           end
         end.gsub(/\n(?!$)/m, ' ')
 
-        message.reply reply
+        message.reply reply unless reply.empty?
       end
 
       def rdy(message, *args)

@@ -203,10 +203,7 @@ describe Ladybot::Plugin::Sync do
 
       context 'by a participant' do
         it 'announces the sync is starting early' do
-          expect(message)
-            .to receive(:reply)
-            .with(/#{nick} has kicked off the sync early!/)
-
+          expect(message).not_to receive(:reply)
           subject.sync(message, args)
         end
 
@@ -245,10 +242,7 @@ describe Ladybot::Plugin::Sync do
         end
 
         it 'announces the sync is starting early' do
-          expect(message_from_regular)
-            .to receive(:reply)
-            .with(/#{huey} has kicked off the sync early!/)
-
+          expect(message_from_regular).not_to receive(:reply)
           subject.sync(message_from_regular, args)
         end
 
