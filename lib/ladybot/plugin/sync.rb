@@ -201,7 +201,8 @@ module Ladybot
 
             <<~REPLY
               #{nick}, you've been added to the sync! Wait for others to
-              #join, or type "go" or "sync" to kick off the sync when you're ready.
+              join, or type "go" or "sync" to kick off the sync when
+              you're ready.
             REPLY
           end
         end.gsub(/\n(?!$)/m, ' ')
