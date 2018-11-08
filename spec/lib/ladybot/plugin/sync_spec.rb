@@ -130,17 +130,16 @@ describe Ladybot::Plugin::Sync do
 
     before { allow(message).to receive(:reply) }
 
-    it 'matches a message starting with "sync" followed by whatever' do
-      expect(described_class.matchers)
-        .to include(have_attributes(pattern: /^sync/, method: :sync))
+    it 'registers a handler for messages containing the command' do
+      expect(described_class.matchers).to include(have_attributes(pattern: /^sync/, method: :sync))
     end
 
-    it 'registers and retrieves the appropriate handler for "sync"' do
-      subject do
-        expect(bot.handlers.find(:message, message)).to eq([a_kind_of(Cinch::Handler)])
-        expect(bot.handlers.find(:message, message).first).to satisfy do |handler|
-          expect(handler.pattern.pattern).to eq(/^sync/)
-        end
+    it 'retrieves the appropriate handler for messages containing the command' do
+      expect(subject.bot.handlers.find(:message, message).first).to be_a_kind_of(Cinch::Handler)
+      expect(subject.bot.handlers.find(:message, message).first).to satisfy do |handler|
+        expect(handler.pattern.pattern).to eq(/^sync/)
+        expect(message).to receive(:reply)
+        handler.block.call(message, args)
       end
     end
 
