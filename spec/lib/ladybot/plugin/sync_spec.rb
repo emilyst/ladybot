@@ -313,26 +313,37 @@ describe Ladybot::Plugin::Sync do
 
   context 'rdy command' do
     let(:message) { Cinch::Message.new(":#{nick}!#{nick}@duckberg.org PRIVMSG #{channel} :rdy", bot) }
-    let(:ready_message) { Cinch::Message.new(":#{nick}!#{nick}@duckberg.org PRIVMSG #{channel} :ready", bot) }
 
-    it 'matches a message starting with "rdy" followed by whatever' do
-      expect(described_class.matchers).to include(have_attributes(pattern: /^r(ea)?dy/, method: :rdy))
+    it 'registers a handler for messages containing the command' do
+      expect(described_class.matchers).to include(have_attributes(pattern: /^r(ea)?dy$/, method: :rdy))
     end
 
-    it 'registers and retrieves the appropriate handler for "rdy"' do
-      subject do
-        expect(bot.handlers.find(:message, message)).to eq([a_kind_of(Cinch::Handler)])
-        expect(bot.handlers.find(:message, message).first).to satisfy do |handler|
-          expect(handler.pattern.pattern).to eq(/^rdy/)
-        end
+    it 'retrieves the appropriate handler for messages containing the command' do
+      expect(subject.bot.handlers.find(:message, message).first).to be_a_kind_of(Cinch::Handler)
+      expect(subject.bot.handlers.find(:message, message).first).to satisfy do |handler|
+        expect(handler.pattern.pattern).to eq(/^r(ea)?dy$/)
+        expect(message).to receive(:reply)
+        handler.block.call(message, args)
       end
     end
 
-    it 'retrieves the appropriate handler for "ready"' do
-      subject do
-        expect(bot.handlers.find(:message, ready_message)).to eq([a_kind_of(Cinch::Handler)])
-        expect(bot.handlers.find(:message, ready_message).first).to satisfy do |handler|
-          expect(handler.pattern.pattern).to eq(/^r(ea)?dy/)
+    context 'when the text "rdy" is followed by more text' do
+      let(:message) { Cinch::Message.new(":#{nick}!#{nick}@duckberg.org PRIVMSG #{channel} :rdy player one", bot) }
+
+      it 'retrieves no handler for the message' do
+        expect(subject.bot.handlers.find(:message, message)).to be_empty
+      end
+    end
+
+    context 'when "ready" is spelled out fully' do
+      let(:message) { Cinch::Message.new(":#{nick}!#{nick}@duckberg.org PRIVMSG #{channel} :ready", bot) }
+
+      it 'retrieves the appropriate handler for messages containing the command' do
+        expect(subject.bot.handlers.find(:message, message).first).to be_a_kind_of(Cinch::Handler)
+        expect(subject.bot.handlers.find(:message, message).first).to satisfy do |handler|
+          expect(handler.pattern.pattern).to eq(/^r(ea)?dy$/)
+          expect(message).to receive(:reply)
+          handler.block.call(message, args)
         end
       end
     end
