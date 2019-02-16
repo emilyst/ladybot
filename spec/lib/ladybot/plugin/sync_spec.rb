@@ -3,7 +3,7 @@
 describe Ladybot::Plugin::Sync do
   include_context 'plugin context'
 
-  context 'add regular command' do
+  describe 'add regular command' do
     let(:message) do
       Cinch::Message.new(":#{nick}!user@duckberg.org PRIVMSG #{channel} :remove me", bot)
     end
@@ -43,7 +43,7 @@ describe Ladybot::Plugin::Sync do
     end
   end
 
-  context 'remove regular command' do
+  describe 'remove regular command' do
     let(:message) do
       Cinch::Message.new(":#{nick}!user@duckberg.org PRIVMSG #{channel} :remove me", bot)
     end
@@ -83,7 +83,7 @@ describe Ladybot::Plugin::Sync do
     end
   end
 
-  context '#notify_regulars' do
+  describe '#notify_regulars' do
     context 'regulars exist' do
       before { subject.regulars[channel] = %w(huey dewey louie) }
 
@@ -125,7 +125,7 @@ describe Ladybot::Plugin::Sync do
     end
   end
 
-  context 'sync command' do
+  describe 'sync command' do
     let(:message) { Cinch::Message.new(":#{nick}!user@duckberg.org PRIVMSG #{channel} :sync", bot) }
 
     before { allow(message).to receive(:reply) }
@@ -310,7 +310,7 @@ describe Ladybot::Plugin::Sync do
     end
   end
 
-  context 'rdy command' do
+  describe 'rdy command' do
     let(:message) { Cinch::Message.new(":#{nick}!#{nick}@duckberg.org PRIVMSG #{channel} :rdy", bot) }
 
     it 'registers a handler for messages containing the command' do
@@ -408,7 +408,36 @@ describe Ladybot::Plugin::Sync do
     end
   end
 
-  context '#countdown' do
+  describe 'go command' do
+    let(:message) { Cinch::Message.new(":#{nick}!#{nick}@duckberg.org PRIVMSG #{channel} :go", bot) }
+
+    before do
+      subject.ongoing_syncs[channel] = { participants: [nick], timers: [Cinch::Timer.new(bot, {}) {}] }
+    end
+
+    it 'registers a handler for messages containing the command' do
+      expect(described_class.matchers).to include(have_attributes(pattern: /^go\b/, method: :go))
+    end
+
+    it 'retrieves the appropriate handler for messages containing the command' do
+      expect(subject.bot.handlers.find(:message, message).first).to be_a_kind_of(Cinch::Handler)
+      expect(subject.bot.handlers.find(:message, message).first).to satisfy do |handler|
+        expect(handler.pattern.pattern).to eq(/^go\b/)
+        expect(subject).to receive(:sync).with(message, args)
+        handler.block.call(message, *args)
+      end
+    end
+
+    context 'when "go" occurs within a larger word' do
+      let(:message) { Cinch::Message.new(":#{nick}!#{nick}@duckberg.org PRIVMSG #{channel} :gonorrhea", bot) }
+
+      it 'retrieves no handler for the message' do
+        expect(subject.bot.handlers.find(:message, message)).to be_empty
+      end
+    end
+  end
+
+  describe '#countdown' do
     context 'with no ongoing sync for the current channel' do
       it 'does nothing' do
         expect(subject).not_to receive(:Channel)

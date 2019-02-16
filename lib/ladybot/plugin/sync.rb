@@ -43,7 +43,7 @@ module Ladybot
       match(/(sync )?(remove)( me)?/,      use_prefix: true,  method: :remove_regular)
       match(/^sync/,                       use_prefix: false, method: :sync)
       match(/^r(ea)?dy$/,                  use_prefix: false, method: :rdy)
-      match(/^go/,                         use_prefix: false, method: :go)
+      match(/^go\b/,                       use_prefix: false, method: :go)
 
       def add_regular(message, *args)
         channel = message.channel.name
