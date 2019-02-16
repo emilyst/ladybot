@@ -8,6 +8,7 @@ module Ladybot
       include Cinch::Plugin
 
       CALLS_TO_ACTION = [
+        "AUTOBOTS, TRANSFORM AND ROLL OUT!",
         "BANG, ZOOM, TO THE MOON, ALICE!",
         "BLAST OFF",
         "BRING IT ON HOME",
