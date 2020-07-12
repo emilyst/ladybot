@@ -3,14 +3,14 @@
 require 'ladybot'
 
 desc 'Run the bot locally, connecting on port 6697 using SSL'
-task :run, [:nick, :server, :channels] do |task, task_args|
+task :run, %i[nick server channels] => [:environment] do |_task, task_args|
   usage = <<~USAGE
-      Usage: #{File.basename($PROGRAM_NAME)} run[ladybot_test,irc.example.org,#test]
+    Usage: #{File.basename($PROGRAM_NAME)} run[ladybot_,irc.example.org,#]
 
-        ...or...
+      ...or...
 
-      Usage: #{File.basename($PROGRAM_NAME)} run[ladybot_test,irc.example.org,#test:#test2:#test3]
-    USAGE
+    Usage: #{File.basename($PROGRAM_NAME)} run[ladybot_,irc.example.org,#:#2:#3]
+  USAGE
 
   if task_args.nick.nil? || task_args.server.nil? || task_args.channels.nil?
     puts usage

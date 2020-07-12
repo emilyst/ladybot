@@ -78,9 +78,10 @@ module Ladybot
     end
 
     def discover_plugins
-      Ladybot::Plugin.constants
-                     .map { |c| Ladybot::Plugin.const_get(c) }
-                     .select { |c| c.included_modules.include?(Cinch::Plugin) }
+      Ladybot::Plugin
+        .constants
+        .map { |c| Ladybot::Plugin.const_get(c) }
+        .select { |c| c.included_modules.include?(Cinch::Plugin) }
     end
 
     def cinch_bot(options)

@@ -9,7 +9,7 @@ module Ladybot
 
       match(/join\s+([&#+!][\S]{1,50})/i)
 
-      def execute(message, channel)
+      def execute(_, channel)
         bot.join(channel)
       end
     end

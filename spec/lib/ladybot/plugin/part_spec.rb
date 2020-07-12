@@ -26,6 +26,9 @@ describe Ladybot::Plugin::Part do
       expect(bot).to receive(:part).with(channel, a_kind_of(String))
       subject.execute(message, args)
     end
+
+    it 'fails' do
+      expect(1).not_to eq(1)
+    end
   end
 end
-

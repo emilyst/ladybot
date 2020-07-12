@@ -15,7 +15,7 @@ module Ladybot
 
       match(/(#{EXPRESSIONS.join('|')})/i, use_prefix: true)
 
-      def execute(message, *args)
+      def execute(*)
         bot.quit('Ladybot version ' + Ladybot::VERSION)
       end
     end

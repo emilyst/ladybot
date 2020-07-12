@@ -3,7 +3,7 @@
 describe Ladybot::Plugin::Join do
   include_context 'plugin context'
 
-  context 'join command' do
+  describe 'join command' do
     let(:message) do
       Cinch::Message.new(":#{nick}!user@duckberg.org PRIVMSG #{channel} :#{bot.nick}: join #channel", bot)
     end
@@ -28,4 +28,3 @@ describe Ladybot::Plugin::Join do
     end
   end
 end
-
