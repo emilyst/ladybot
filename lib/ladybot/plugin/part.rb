@@ -15,7 +15,7 @@ module Ladybot
 
       match(/(#{EXPRESSIONS.join('|')})/i)
 
-      def execute(message, *args)
+      def execute(message, *)
         bot.part(message.channel.name, 'Ladybot version ' + Ladybot::VERSION)
       end
     end

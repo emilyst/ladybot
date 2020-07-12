@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 shared_context 'plugin context', shared_context: :metadata do
+  subject { described_class.new(bot) }
+
   let(:nick) { 'scrooge' }
   let(:channel) { '#duckberg' }
   let(:channel_helper_response) { Cinch::Channel.new(channel, bot) }
@@ -15,8 +17,6 @@ shared_context 'plugin context', shared_context: :metadata do
       end
     end
   end
-
-  subject { described_class.new(bot) }
 
   before do
     # turn off logging

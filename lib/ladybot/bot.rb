@@ -32,8 +32,9 @@ module Ladybot
           options[:port] = o
         end
 
+        options[:ssl] = Cinch::Configuration::SSL.new
         p.on('-S', '--[no-]ssl', TrueClass, 'Use SSL') do |o|
-          options[:ssl] = o
+          options[:ssl].use = o
         end
 
         p.on('-nNICK', '--nick=NICK', 'Nick for the bot') do |o|
@@ -69,7 +70,6 @@ module Ladybot
       end
 
       options[:port]     = 6667      if options[:port].nil?
-      options[:ssl]      = false     if options[:ssl].nil?
       options[:nick]     = 'ladybot' if options[:nick].nil?
       options[:user]     = 'ladybot' if options[:user].nil?
       options[:channels] = []        if options[:channels].nil?
@@ -78,9 +78,10 @@ module Ladybot
     end
 
     def discover_plugins
-      Ladybot::Plugin.constants
-                     .map { |c| Ladybot::Plugin.const_get(c) }
-                     .select { |c| c.included_modules.include?(Cinch::Plugin) }
+      Ladybot::Plugin
+        .constants
+        .map { |c| Ladybot::Plugin.const_get(c) }
+        .select { |c| c.included_modules.include?(Cinch::Plugin) }
     end
 
     def cinch_bot(options)
@@ -89,6 +90,8 @@ module Ladybot
       Cinch::Bot.new do
         configure do |c|
           c.server          = options[:server]
+          c.port            = options[:port]
+          c.ssl             = options[:ssl]
           c.nick            = options[:nick]
           c.user            = options[:user]
           c.channels        = options[:channels]

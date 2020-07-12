@@ -8,7 +8,7 @@ describe Ladybot::Plugin::Sync do
       Cinch::Message.new(":#{nick}!user@duckberg.org PRIVMSG #{channel} :remove me", bot)
     end
 
-    before { subject.regulars[channel] = %w(huey dewey louie) }
+    before { subject.regulars[channel] = %w[huey dewey louie] }
 
     context 'when called by someone who is not already a regular' do
       it 'adds the user' do
@@ -19,7 +19,7 @@ describe Ladybot::Plugin::Sync do
       it 'tells the user they have been added' do
         expect(message)
           .to receive(:reply)
-          .with(/#{nick}, you've been added to this channel's regular sync participants!/)
+                .with(/#{nick}, you've been added to this channel's regular sync participants!/)
 
         subject.add_regular(message, args)
       end
@@ -36,7 +36,7 @@ describe Ladybot::Plugin::Sync do
       it 'tells the user they have been already been added' do
         expect(message)
           .to receive(:reply)
-          .with(/#{nick}, you're already a regular\./)
+                .with(/#{nick}, you're already a regular\./)
 
         subject.add_regular(message, args)
       end
@@ -48,20 +48,20 @@ describe Ladybot::Plugin::Sync do
       Cinch::Message.new(":#{nick}!user@duckberg.org PRIVMSG #{channel} :remove me", bot)
     end
 
-    before { subject.regulars[channel] = %w(huey dewey louie) }
+    before { subject.regulars[channel] = %w[huey dewey louie] }
 
     context 'when called by someone who is a regular' do
       before { subject.regulars[channel].push(nick) }
 
       it 'removes the user' do
         subject.remove_regular(message, args)
-        expect(subject.regulars).to eq({ channel => ['huey', 'dewey', 'louie'] })
+        expect(subject.regulars).to eq({ channel => %w[huey dewey louie] })
       end
 
       it 'tells the user they have been removed' do
         expect(message)
           .to receive(:reply)
-          .with(/#{nick}, you've been removed from this channel's regular sync participants!/)
+                .with(/#{nick}, you've been removed from this channel's regular sync participants!/)
 
         subject.remove_regular(message, args)
       end
@@ -70,13 +70,13 @@ describe Ladybot::Plugin::Sync do
     context 'when called by someone who is already not a regular' do
       it 'leaves the existing regulars alone' do
         subject.remove_regular(message, args)
-        expect(subject.regulars).to eq({ channel => ['huey', 'dewey', 'louie'] })
+        expect(subject.regulars).to eq({ channel => %w[huey dewey louie] })
       end
 
       it 'tells the user they were not a regular' do
         expect(message)
           .to receive(:reply)
-          .with(/#{nick}, you weren't a regular in the first place\./)
+                .with(/#{nick}, you weren't a regular in the first place\./)
 
         subject.remove_regular(message, args)
       end
@@ -85,29 +85,29 @@ describe Ladybot::Plugin::Sync do
 
   describe '#notify_regulars' do
     context 'regulars exist' do
-      before { subject.regulars[channel] = %w(huey dewey louie) }
+      before { subject.regulars[channel] = %w[huey dewey louie] }
 
       it 'tells the regulars' do
         expect(channel_helper_response)
           .to receive(:send)
-          .with(/Hey, huey, dewey, louie, a new sync just started./)
+                .with(/Hey, huey, dewey, louie, a new sync just started./)
 
         subject.notify_regulars(channel, nick)
       end
 
       context 'when triggered by one of the regulars' do
-        before { subject.regulars[channel] = %w(scrooge huey dewey louie) }
+        before { subject.regulars[channel] = %w[scrooge huey dewey louie] }
 
         it 'does not notify the regular who sent the notification' do
           expect(channel_helper_response)
             .to receive(:send)
-            .with(/Hey, huey, dewey, louie, a new sync just started./)
+                  .with(/Hey, huey, dewey, louie, a new sync just started./)
 
           subject.notify_regulars(channel, nick)
         end
 
         context 'when the only regular is the one who triggered the sync' do
-          before { subject.regulars[channel] = %w(scrooge) }
+          before { subject.regulars[channel] = %w[scrooge] }
 
           it 'sends no message to the channel' do
             expect(channel_helper_response).not_to receive(:send)
@@ -165,16 +165,17 @@ describe Ladybot::Plugin::Sync do
       it 'creates an ongoing sync' do
         subject.sync(message, args)
 
-        expect(subject.ongoing_syncs).to include(channel => {
-          participants: [nick],
-          timers: [a_kind_of(Cinch::Timer)]
-        })
+        expect(subject.ongoing_syncs)
+          .to include(channel => {
+                        participants: [nick],
+                        timers: [a_kind_of(Cinch::Timer)],
+                      })
       end
 
       context 'when regulars exist' do
         before do
-          subject.regulars[channel] = %w(huey dewey louie)
-          allow(subject).to receive(:Timer)  # ignore first timer
+          subject.regulars[channel] = %w[huey dewey louie]
+          allow(subject).to receive(:Timer) # ignore first timer
         end
 
         it 'queues up a notification for them too' do
@@ -194,7 +195,7 @@ describe Ladybot::Plugin::Sync do
 
     context 'when called again' do
       before do
-        allow(subject).to receive(:Timer)  # ignore first timer
+        allow(subject).to receive(:Timer) # ignore first timer
 
         # the first call to begin the sync
         subject.sync(message, args)
@@ -225,8 +226,8 @@ describe Ladybot::Plugin::Sync do
           subject.sync(message, args)
 
           expect(subject.ongoing_syncs).to include({
-            channel => hash_including(participants: [nick, 'should_not_disappear'])
-          })
+                                                     channel => hash_including(participants: [nick, 'should_not_disappear']),
+                                                   })
         end
       end
 
@@ -237,7 +238,7 @@ describe Ladybot::Plugin::Sync do
         end
 
         before do
-          subject.regulars[channel] = %w(huey dewey louie)
+          subject.regulars[channel] = %w[huey dewey louie]
         end
 
         it 'announces the sync is starting early' do
@@ -264,8 +265,8 @@ describe Ladybot::Plugin::Sync do
           subject.sync(message_from_regular, args)
 
           expect(subject.ongoing_syncs).to include({
-            channel => hash_including(participants: [nick, 'should_not_disappear'])
-          })
+                                                     channel => hash_including(participants: [nick, 'should_not_disappear']),
+                                                   })
         end
       end
 
@@ -296,14 +297,14 @@ describe Ladybot::Plugin::Sync do
           subject.sync(non_participant_message, args)
 
           expect(subject.ongoing_syncs).to include({
-            channel => hash_including(participants: [nick])
-          })
+                                                     channel => hash_including(participants: [nick]),
+                                                   })
         end
 
         it 'warns the non-participant they cannot start the sync' do
           expect(non_participant_message)
             .to receive(:reply)
-            .with(/#{huey}, there's already a sync going on./)
+                  .with(/#{huey}, there's already a sync going on./)
           subject.sync(non_participant_message, args)
         end
       end
@@ -355,7 +356,7 @@ describe Ladybot::Plugin::Sync do
 
       it 'does not create an ongoing sync' do
         subject.rdy(message, args)
-        expect(subject.ongoing_syncs).to include({ channel => {} })
+        expect(subject.ongoing_syncs).to include({ channel => {}})
       end
     end
 
@@ -365,7 +366,7 @@ describe Ladybot::Plugin::Sync do
       context 'from the user who began the sync' do
         it 'warns the user' do
           expect(message).to receive(:reply)
-            .with(/Sorry, #{nick}, you're already in the sync/)
+                               .with(/Sorry, #{nick}, you're already in the sync/)
           subject.rdy(message, args)
         end
       end
@@ -381,7 +382,7 @@ describe Ladybot::Plugin::Sync do
 
         it 'tells the user they are in the sync' do
           expect(message).to receive(:reply)
-            .with(/#{huey}, you've been added to the sync/)
+                               .with(/#{huey}, you've been added to the sync/)
           subject.rdy(message, args)
         end
       end
@@ -391,7 +392,7 @@ describe Ladybot::Plugin::Sync do
       before do
         subject.ongoing_syncs['#another_channel'] = {
           participants: [nick],
-          timers: [Cinch::Timer.new(bot, {}) {}]
+          timers: [Cinch::Timer.new(bot, {}) {}],
         }
       end
 
@@ -403,7 +404,7 @@ describe Ladybot::Plugin::Sync do
 
       it 'does not create an ongoing sync in that channel' do
         subject.rdy(message, args)
-        expect(subject.ongoing_syncs).to include({ channel => {} })
+        expect(subject.ongoing_syncs).to include({ channel => {}})
       end
     end
   end
@@ -453,13 +454,13 @@ describe Ladybot::Plugin::Sync do
           # add other participants to the sync
           subject.ongoing_syncs[channel] = {
             participants: [nick, 'huey', 'dewey', 'louie'],
-            timers: [timer]
+            timers: [timer],
           }
         end
 
         it 'removes the ongoing sync' do
           subject.countdown(channel)
-          expect(subject.ongoing_syncs).to include({ channel => {} })
+          expect(subject.ongoing_syncs).to include({ channel => {}})
         end
 
         it 'stops the timer' do
@@ -468,17 +469,17 @@ describe Ladybot::Plugin::Sync do
 
         it 'announces the countdown to all participants' do
           expect(channel_helper_response).to receive(:send)
-            .with(/Hey, #{nick}, huey, dewey, louie, it's time to sync/)
+                                               .with(/Hey, #{nick}, huey, dewey, louie, it's time to sync/)
 
           subject.countdown(channel)
         end
 
         context 'when there are regulars' do
-          before { subject.regulars[channel] = %w(donald daisy) }
+          before { subject.regulars[channel] = %w[donald daisy] }
 
           it 'announces to regulars too' do
             expect(channel_helper_response).to receive(:send)
-              .with(/Hey, #{nick}, huey, dewey, louie, donald, daisy, it's time to sync/)
+                                                 .with(/Hey, #{nick}, huey, dewey, louie, donald, daisy, it's time to sync/)
 
             subject.countdown(channel)
           end
@@ -493,13 +494,13 @@ describe Ladybot::Plugin::Sync do
           # simulate an early sync
           subject.ongoing_syncs[channel] = {
             participants: [nick],
-            timers: [original_timer, short_circuit_timer]
+            timers: [original_timer, short_circuit_timer],
           }
         end
 
         it 'removes the ongoing sync' do
           subject.countdown(channel)
-          expect(subject.ongoing_syncs).to include({ channel => {} })
+          expect(subject.ongoing_syncs).to include({ channel => {}})
         end
 
         it 'stops the original timer' do
@@ -512,17 +513,17 @@ describe Ladybot::Plugin::Sync do
 
         it 'announces the countdown to all participants' do
           expect(channel_helper_response).to receive(:send)
-            .with(/Hey, #{nick}, it's time to sync/)
+                                               .with(/Hey, #{nick}, it's time to sync/)
 
           subject.countdown(channel)
         end
 
         context 'when there are regulars' do
-          before { subject.regulars[channel] = %w(huey dewey louie) }
+          before { subject.regulars[channel] = %w[huey dewey louie] }
 
           it 'announces to regulars too' do
             expect(channel_helper_response).to receive(:send)
-              .with(/Hey, #{nick}, huey, dewey, louie, it's time to sync/)
+                                                 .with(/Hey, #{nick}, huey, dewey, louie, it's time to sync/)
 
             subject.countdown(channel)
           end

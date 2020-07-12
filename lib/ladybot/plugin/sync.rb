@@ -46,12 +46,12 @@ module Ladybot
       match(/^r(ea)?dy$/,                  use_prefix: false, method: :rdy)
       match(/^go\b/,                       use_prefix: false, method: :go)
 
-      def add_regular(message, *args)
+      def add_regular(message, *_args)
         channel = message.channel.name
         nick = message.user.nick
 
         reply = synchronize(channel) do
-          if @regulars.has_key?(channel) && @regulars[channel].include?(nick)
+          if @regulars.key?(channel) && @regulars[channel].include?(nick)
             <<~REPLY
               #{nick}, you're already a regular. You'll be notified
               whenever someone starts a new sync.If you don't want this
@@ -59,7 +59,7 @@ module Ladybot
               sync remove me".
             REPLY
           else
-            @regulars[channel] = [] unless @regulars.has_key?(channel)
+            @regulars[channel] = [] unless @regulars.key?(channel)
             @regulars[channel].push(nick)
 
             <<~REPLY
@@ -74,12 +74,12 @@ module Ladybot
         message.reply reply
       end
 
-      def remove_regular(message, *args)
+      def remove_regular(message, *_args)
         channel = message.channel.name
         nick = message.user.nick
 
         reply = synchronize(channel) do
-          if @regulars.has_key?(channel) && @regulars[channel].include?(nick)
+          if @regulars.key?(channel) && @regulars[channel].include?(nick)
             @regulars[channel].delete(nick)
 
             <<~REPLY
@@ -107,8 +107,8 @@ module Ladybot
 
             unless recipients.empty?
               announce = <<~ANNOUNCE
-              Hey, #{recipients.join(', ')}, a new sync just started.
-              Get ready. I'll notify you again at the countdown.
+                Hey, #{recipients.join(', ')}, a new sync just started.
+                Get ready. I'll notify you again at the countdown.
               ANNOUNCE
 
               Channel(channel).send announce.gsub(/\n(?!$)/m, ' ')
@@ -117,13 +117,13 @@ module Ladybot
         end
       end
 
-      def sync(message, *args)
+      def sync(message, *_args)
         channel = message.channel.name
         nick = message.user.nick
 
         reply = synchronize(channel) do
-          @regulars[channel]      = [] unless @regulars.has_key?(channel)
-          @ongoing_syncs[channel] = {} unless @ongoing_syncs.has_key?(channel)
+          @regulars[channel]      = [] unless @regulars.key?(channel)
+          @ongoing_syncs[channel] = {} unless @ongoing_syncs.key?(channel)
 
           from_regular            = @regulars[channel].include?(nick)
           from_participant        = if @ongoing_syncs[channel].empty?
@@ -162,20 +162,20 @@ module Ladybot
             @ongoing_syncs[channel][:timers]
               .push(Timer(0.5, shots: 1) { countdown(channel) })
 
-            ''  # no reply, everyone's about to get notified anyway
+            '' # no reply, everyone's about to get notified anyway
           end
         end.gsub(/\n(?!$)/m, ' ')
 
         message.reply reply unless reply.empty?
       end
 
-      def rdy(message, *args)
+      def rdy(message, *_args)
         channel = message.channel.name
         nick = message.user.nick
 
         reply = synchronize(channel) do
-          @regulars[channel]      = [] unless @regulars.has_key?(channel)
-          @ongoing_syncs[channel] = {} unless @ongoing_syncs.has_key?(channel)
+          @regulars[channel]      = [] unless @regulars.key?(channel)
+          @ongoing_syncs[channel] = {} unless @ongoing_syncs.key?(channel)
 
           from_regular            = @regulars[channel].include?(nick)
           from_participant        = if @ongoing_syncs[channel].empty?
@@ -191,7 +191,7 @@ module Ladybot
               yourself as a regular by saying, "#{bot.nick}: sync
               add me".
             REPLY
-          elsif (from_participant || from_regular)
+          elsif from_participant || from_regular
             <<~REPLY
               Sorry, #{nick}, you're already in the sync. Just wait for
               it to kick off automatically, or type "go" or "sync" to
@@ -215,8 +215,8 @@ module Ladybot
         channel = message.channel.name
 
         synchronize(channel) do
-          @regulars[channel]      = [] unless @regulars.has_key?(channel)
-          @ongoing_syncs[channel] = {} unless @ongoing_syncs.has_key?(channel)
+          @regulars[channel]      = [] unless @regulars.key?(channel)
+          @ongoing_syncs[channel] = {} unless @ongoing_syncs.key?(channel)
         end
 
         # reuse the logic from sync method, without synchronizing
@@ -227,8 +227,8 @@ module Ladybot
 
       def countdown(channel)
         synchronize(channel) do
-          @regulars[channel]      = [] unless @regulars.has_key?(channel)
-          @ongoing_syncs[channel] = {} unless @ongoing_syncs.has_key?(channel)
+          @regulars[channel]      = [] unless @regulars.key?(channel)
+          @ongoing_syncs[channel] = {} unless @ongoing_syncs.key?(channel)
 
           unless @ongoing_syncs[channel].empty?
             timers       = @ongoing_syncs[channel][:timers]
@@ -242,10 +242,14 @@ module Ladybot
               time to sync in five seconds! Ready?
             ANNOUNCE
 
-            Channel(channel).send announce.gsub(/\n(?!$)/m, ' '); sleep 5
-            Channel(channel).send '3';                            sleep 1.5
-            Channel(channel).send '2';                            sleep 1.5
-            Channel(channel).send '1';                            sleep 1.5
+            Channel(channel).send announce.gsub(/\n(?!$)/m, ' ')
+            sleep 5
+            Channel(channel).send '3'
+            sleep 1.5
+            Channel(channel).send '2'
+            sleep 1.5
+            Channel(channel).send '1'
+            sleep 1.5
 
             Channel(channel).send CALLS_TO_ACTION.sample
 
